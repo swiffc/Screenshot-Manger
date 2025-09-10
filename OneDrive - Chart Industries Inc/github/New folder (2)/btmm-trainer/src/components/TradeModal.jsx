@@ -27,7 +27,7 @@ export default function TradeModal({
           <p className="text-xs sm:text-sm text-gray-300 mt-1">Building your pattern recognition library with proven setups</p>
         </div>
 
-        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div>
               <label className="block text-sm font-medium text-yellow-400 mb-2">Date</label>
@@ -195,19 +195,33 @@ export default function TradeModal({
                   <h4 className="font-medium text-white mb-2 sm:mb-3 text-sm sm:text-base">{category}</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-2">
                     {options.map((option) => (
-                      <label key={option} className="flex items-start space-x-2 text-xs sm:text-sm">
+                      <div key={option} className="flex items-start space-x-2 text-xs sm:text-sm">
                         <input
                           type="checkbox"
+                          id={`confluence-${option.replace(/[^a-zA-Z0-9]/g, '-')}`}
                           checked={formData.confluences[option] || false}
                           onChange={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             handleConfluenceChange(option, e.target.checked);
                           }}
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
                           className="rounded border-yellow-500/30 text-yellow-500 focus:ring-yellow-500 bg-gray-700 mt-0.5 flex-shrink-0 cursor-pointer"
                         />
-                        <span className="text-gray-300 leading-tight">{option}</span>
-                      </label>
+                        <label 
+                          htmlFor={`confluence-${option.replace(/[^a-zA-Z0-9]/g, '-')}`}
+                          className="text-gray-300 leading-tight cursor-pointer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                        >
+                          {option}
+                        </label>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -248,15 +262,14 @@ export default function TradeModal({
               Cancel
             </button>
             <button
-              type="button"
-              onClick={onSubmit}
+              type="submit"
               className="w-full sm:w-auto px-4 sm:px-6 py-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-black rounded-lg hover:from-yellow-400 hover:to-amber-500 transition-all duration-200 flex items-center justify-center space-x-2 font-semibold text-sm sm:text-base"
             >
               <TrendingUp className="h-4 w-4" />
               <span>{editingTrade ? 'Update Winner' : 'Save Winner'}</span>
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
