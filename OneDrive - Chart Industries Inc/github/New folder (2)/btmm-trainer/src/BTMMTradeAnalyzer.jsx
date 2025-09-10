@@ -141,7 +141,8 @@ const BTMMTradeAnalyzer = () => {
     patternType: 'Type 1',
     pair: 'EURUSD',
     image: null,
-    imageUrl: '',
+    imageUrl: '', // Keep for backward compatibility
+    images: [], // New: Array of {timeframe, url, file} objects
     // Bias-first fields
     biasLevel: '1',
     emaCrosses: {},
@@ -468,6 +469,55 @@ const BTMMTradeAnalyzer = () => {
     }
   };
 
+  // New multiple image upload handler
+  const handleMultipleImageUpload = async (event, timeframe) => {
+    const file = event.target.files[0];
+    if (file) {
+      try {
+        const compressedDataUrl = await compressImage(file, 1600, 0.8);
+        const newImage = {
+          id: uuidv4(),
+          timeframe,
+          url: compressedDataUrl,
+          file: file
+        };
+        
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images.filter(img => img.timeframe !== timeframe), newImage]
+        }));
+      } catch (e) {
+        // Fallback: use original if compression fails
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const newImage = {
+            id: uuidv4(),
+            timeframe,
+            url: ev.target.result,
+            file: file
+          };
+          
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images.filter(img => img.timeframe !== timeframe), newImage]
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  // Remove image from multiple images
+  const removeImage = (imageId) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter(img => img.id !== imageId)
+    }));
+  };
+
+  // Available timeframes for chart analysis
+  const timeframes = ['Monthly', 'Weekly', 'Daily', '4H', '1H', '30M', '15M', '5M', '1M'];
+
   const handlePaste = useCallback(async (event) => {
     const items = event.clipboardData?.items;
     if (items) {
@@ -665,7 +715,10 @@ const BTMMTradeAnalyzer = () => {
 
   const handleSubmit = async () => {
     let remoteImageUrl = formData.imageUrl;
+    let remoteImages = [];
+    
     try {
+      // Handle legacy single image
       if (isSupabaseConnected && supabaseRef.current && formData.imageUrl && formData.imageUrl.startsWith('data:')) {
         const blob = dataUrlToBlob(formData.imageUrl);
         const fileName = `trade-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
@@ -675,13 +728,42 @@ const BTMMTradeAnalyzer = () => {
           if (pub?.publicUrl) remoteImageUrl = pub.publicUrl;
         }
       }
+      
+      // Handle multiple images
+      if (isSupabaseConnected && supabaseRef.current && formData.images?.length > 0) {
+        for (const image of formData.images) {
+          if (image.url && image.url.startsWith('data:')) {
+            const blob = dataUrlToBlob(image.url);
+            const fileName = `trade-${Date.now()}-${image.timeframe}-${Math.random().toString(36).slice(2)}.jpg`;
+            const { error: upErr } = await supabaseRef.current.storage.from('trade-images').upload(fileName, blob, { contentType: blob.type, upsert: true });
+            if (!upErr) {
+              const { data: pub } = supabaseRef.current.storage.from('trade-images').getPublicUrl(fileName);
+              if (pub?.publicUrl) {
+                remoteImages.push({
+                  id: image.id,
+                  timeframe: image.timeframe,
+                  url: pub.publicUrl
+                });
+              }
+            }
+          } else if (image.url) {
+            // Already uploaded image
+            remoteImages.push({
+              id: image.id,
+              timeframe: image.timeframe,
+              url: image.url
+            });
+          }
+        }
+      }
     } catch (_) {}
 
     const nowIso = new Date().toISOString();
     const newTrade = {
-      id: editingTrade ? editingTrade.id : uuidv4(),
+      id: editingTrade?.id || uuidv4(),
       ...formData,
-      imageUrl: remoteImageUrl || formData.imageUrl,
+      imageUrl: remoteImageUrl,
+      images: remoteImages.length > 0 ? remoteImages : formData.images, // Use uploaded URLs or keep local URLs
       description: generateDescription(
         formData.patternType,
         formData.confluences,
@@ -694,7 +776,7 @@ const BTMMTradeAnalyzer = () => {
       ),
       timestamp: nowIso,
       createdAt: editingTrade?.createdAt || editingTrade?.timestamp || nowIso,
-      updatedAt: nowIso,
+      updatedAt: nowIso
     };
 
     if (editingTrade) {
@@ -722,6 +804,7 @@ const BTMMTradeAnalyzer = () => {
       pair: 'EURUSD',
       image: null,
       imageUrl: '',
+      images: [], // Reset multiple images
       // Bias-first defaults
       biasLevel: '1',
       emaCrosses: {},
@@ -1066,6 +1149,7 @@ const BTMMTradeAnalyzer = () => {
                       pair: 'EURUSD',
                       image: null,
                       imageUrl: '',
+                      images: [],
                       biasLevel: '1',
                       emaCrosses: {},
                       adr5: '',
@@ -1086,6 +1170,9 @@ const BTMMTradeAnalyzer = () => {
         setFormData={setFormData}
         fileInputRef={fileInputRef}
         handleImageUpload={handleImageUpload}
+        handleMultipleImageUpload={handleMultipleImageUpload}
+        removeImage={removeImage}
+        timeframes={timeframes}
         confluenceOptions={confluenceOptions}
         handleConfluenceChange={handleConfluenceChange}
       />

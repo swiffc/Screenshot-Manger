@@ -13,6 +13,9 @@ export default function TradeModal({
   setFormData,
   fileInputRef,
   handleImageUpload,
+  handleMultipleImageUpload,
+  removeImage,
+  timeframes,
   confluenceOptions,
   handleConfluenceChange,
 }) {
@@ -181,6 +184,78 @@ export default function TradeModal({
                 onChange={handleImageUpload}
                 className="hidden"
               />
+            </div>
+          </div>
+
+          {/* Multiple Chart Screenshots Section */}
+          <div>
+            <label className="block text-sm font-medium text-yellow-400 mb-4">
+              Multiple Timeframe Analysis 
+              <span className="text-gray-300 text-xs ml-2">(Upload charts from different timeframes for comprehensive analysis)</span>
+            </label>
+            
+            {/* Timeframe Selection and Upload */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {timeframes?.map((timeframe) => {
+                  const hasImage = formData.images?.find(img => img.timeframe === timeframe);
+                  return (
+                    <div key={timeframe} className="relative">
+                      <input
+                        type="file"
+                        id={`file-${timeframe}`}
+                        accept="image/*"
+                        capture="environment"
+                        onChange={(e) => handleMultipleImageUpload(e, timeframe)}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById(`file-${timeframe}`).click()}
+                        className={`w-full p-3 border-2 border-dashed rounded-lg text-center transition-colors ${
+                          hasImage 
+                            ? 'border-green-500/50 bg-green-500/10 text-green-400' 
+                            : 'border-yellow-500/30 bg-gray-800/50 text-gray-300 hover:border-yellow-400/50'
+                        }`}
+                      >
+                        <div className="text-xs font-medium">{timeframe}</div>
+                        <div className="text-xs mt-1">
+                          {hasImage ? '✓ Uploaded' : '+ Add Chart'}
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Display uploaded images */}
+              {formData.images?.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-yellow-400">Uploaded Charts:</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-64 overflow-y-auto">
+                    {formData.images.map((image) => (
+                      <div key={image.id} className="relative bg-gray-800 border border-yellow-500/30 rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-xs font-medium text-yellow-400">{image.timeframe}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(image.id)}
+                            className="text-red-400 hover:text-red-300 text-xs"
+                          >
+                            ✕ Remove
+                          </button>
+                        </div>
+                        <img 
+                          src={image.url} 
+                          alt={`${image.timeframe} chart`}
+                          className="w-full h-24 object-cover rounded border border-gray-600"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

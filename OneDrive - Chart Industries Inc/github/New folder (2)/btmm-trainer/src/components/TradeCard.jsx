@@ -68,8 +68,9 @@ export default function TradeCard({ trade, isExpanded, onToggleExpand, onEdit, o
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {trade.imageUrl && (
+        <div className="space-y-6">
+          {/* Legacy single image support */}
+          {trade.imageUrl && !trade.images?.length && (
             <div className="space-y-2">
               <h4 className="font-medium text-white">Chart Screenshot</h4>
               <img
@@ -79,6 +80,29 @@ export default function TradeCard({ trade, isExpanded, onToggleExpand, onEdit, o
                 loading="lazy"
                 onClick={() => setLightboxUrl(trade.imageUrl)}
               />
+            </div>
+          )}
+          
+          {/* Multiple timeframe images */}
+          {trade.images?.length > 0 && (
+            <div className="space-y-4">
+              <h4 className="font-medium text-white">Multi-Timeframe Chart Analysis</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {trade.images.map((image) => (
+                  <div key={image.id} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-medium text-yellow-400">{image.timeframe}</span>
+                    </div>
+                    <img
+                      src={image.url}
+                      alt={`${image.timeframe} chart analysis`}
+                      className="w-full h-48 object-cover rounded-lg border border-yellow-500/30 cursor-zoom-in hover:border-yellow-400 transition-colors"
+                      loading="lazy"
+                      onClick={() => setLightboxUrl(image.url)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
