@@ -142,7 +142,7 @@ const BTMMTradeAnalyzer = () => {
     pair: 'EURUSD',
     image: null,
     imageUrl: '', // Keep for backward compatibility
-    images: [], // New: Array of {timeframe, url, file} objects
+    images: [], // New: Array of {timeframe, url, file} objects for multiple screenshots
     // Bias-first fields
     biasLevel: '1',
     emaCrosses: {},
@@ -1149,7 +1149,7 @@ const BTMMTradeAnalyzer = () => {
                       pair: 'EURUSD',
                       image: null,
                       imageUrl: '',
-                      images: [],
+                      images: [], // Reset multiple images
                       biasLevel: '1',
                       emaCrosses: {},
                       adr5: '',
