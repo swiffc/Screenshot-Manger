@@ -199,8 +199,12 @@ export default function TradeModal({
                         <input
                           type="checkbox"
                           checked={formData.confluences[option] || false}
-                          onChange={(e) => handleConfluenceChange(option, e.target.checked)}
-                          className="rounded border-yellow-500/30 text-yellow-500 focus:ring-yellow-500 bg-gray-700 mt-0.5 flex-shrink-0"
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleConfluenceChange(option, e.target.checked);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="rounded border-yellow-500/30 text-yellow-500 focus:ring-yellow-500 bg-gray-700 mt-0.5 flex-shrink-0 cursor-pointer"
                         />
                         <span className="text-gray-300 leading-tight">{option}</span>
                       </label>
